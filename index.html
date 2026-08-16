@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>영어지문 파헤치기</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:#f7f7f7; color:#1f1f1f; }
+    button, textarea, input { font: inherit; }
+    button { cursor: pointer; }
+    .hidden { display:none !important; }
+    .header { height:68px; display:flex; align-items:center; padding:0 40px; background:#fff; border-bottom:1px solid #ddd; }
+    .header h1 { margin:0; font-size:20px; }
+    .container { width:min(1120px, calc(100% - 48px)); margin:0 auto; padding:48px 0 80px; }
+    .section-title { margin:0 0 10px; font-size:22px; }
+    .description { margin:0 0 24px; color:#666; font-size:15px; line-height:1.6; }
+    .card { background:#fff; border:1px solid #ddd; border-radius:10px; padding:28px; }
+    .primary, .secondary, .outline { min-height:46px; padding:0 22px; border-radius:7px; font-weight:600; }
+    .primary { border:1px solid #222; background:#222; color:#fff; }
+    .primary:disabled { background:#ccc; border-color:#ccc; cursor:not-allowed; }
+    .secondary { border:1px solid #ccc; background:#fff; color:#222; }
+    .outline { border:1px solid #222; background:#fff; color:#222; }
+    .mode-row { display:flex; gap:10px; margin-bottom:24px; }
+    .mode { flex:1; min-height:52px; border:1px solid #ccc; background:#fff; border-radius:7px; font-weight:600; }
+    .mode.active { background:#222; color:#fff; border-color:#222; }
+    .upload-box { min-height:260px; border:1px dashed #aaa; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; padding:30px; background:#fafafa; }
+    .upload-box.dragover { background:#eee; border-color:#555; }
+    .file-input { display:none; }
+    .preview-wrap { margin-top:24px; }
+    .image-preview { min-height:320px; display:flex; align-items:center; justify-content:center; border:1px solid #ddd; border-radius:8px; background:#fafafa; overflow:hidden; }
+    .image-preview img { max-width:100%; max-height:540px; object-fit:contain; }
+    .preview-actions { display:flex; justify-content:flex-end; margin-top:12px; }
+    .text-input, .revision-input { width:100%; border:1px solid #ccc; border-radius:8px; padding:18px; outline:none; resize:vertical; line-height:1.7; }
+    .text-input { min-height:360px; }
+    .revision-input { min-height:145px; }
+    .center-action { display:flex; justify-content:center; margin-top:28px; }
+    .center-action .primary { min-width:220px; }
+    .progress-wrap { max-width:780px; margin:50px auto 0; text-align:center; }
+    .progress-wrap h2 { margin:0 0 32px; font-size:26px; }
+    .track { width:100%; height:18px; border-radius:999px; background:#e5e5e5; overflow:hidden; }
+    .bar { width:0%; height:100%; background:#222; border-radius:inherit; transition:width .35s ease; }
+    .percent { margin:18px 0 8px; font-size:25px; font-weight:700; }
+    .status { margin:0; color:#666; }
+    .summary-box { margin-top:42px; text-align:left; background:#fff; border:1px solid #ddd; border-radius:8px; padding:18px; min-height:90px; white-space:pre-wrap; word-break:break-word; color:#555; }
+    .summary-box img { max-width:180px; max-height:160px; object-fit:contain; }
+    .result-message { margin:0 0 22px; font-size:20px; font-weight:700; }
+    .result-layout { display:grid; grid-template-columns:minmax(0,1fr) 260px; gap:24px; align-items:start; }
+    .pdf-shell { min-height:520px; background:#ececec; border:1px solid #ccc; border-radius:8px; padding:28px; display:flex; justify-content:center; align-items:flex-start; overflow:auto; }
+    .pdf-thumb { width:330px; height:467px; background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.10); overflow:hidden; }
+    .pdf-thumb iframe { width:1000px; height:1415px; border:0; transform:scale(.33); transform-origin:top left; pointer-events:none; background:#fff; }
+    .pdf-placeholder { width:330px; height:467px; background:#fff; border:1px solid #ddd; display:flex; align-items:center; justify-content:center; padding:24px; color:#777; text-align:center; line-height:1.6; }
+    .side { position:sticky; top:24px; }
+    .side-title { margin:0 0 8px; font-weight:700; }
+    .side-status { margin:0 0 20px; color:#666; font-size:14px; }
+    .side-buttons { display:flex; flex-direction:column; gap:10px; }
+    .side-buttons button { width:100%; }
+    .revision-section { margin-top:40px; padding-top:34px; border-top:1px solid #ddd; }
+    .revision-section h2 { margin:0 0 8px; font-size:20px; }
+    .revision-section p { color:#666; line-height:1.6; }
+    .revision-action { display:flex; justify-content:flex-end; margin-top:14px; }
+    .notice { margin-top:18px; color:#666; font-size:14px; }
+    @media (max-width:900px) {
+      .header { padding:0 24px; }
+      .container { width:min(100% - 32px,1120px); padding-top:32px; }
+      .result-layout { grid-template-columns:1fr; }
+      .side { position:static; }
+      .side-buttons { flex-direction:row; }
+      .side-buttons button { flex:1; }
+    }
+    @media (max-width:600px) {
+      .header { height:60px; padding:0 18px; }
+      .container { width:calc(100% - 24px); padding:24px 0 50px; }
+      .card { padding:18px; }
+      .mode-row, .side-buttons { flex-direction:column; }
+      .pdf-thumb, .pdf-placeholder { width:260px; height:368px; }
+      .pdf-thumb iframe { transform:scale(.26); }
+      .revision-action .primary { width:100%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header"><h1>영어지문 파헤치기</h1></header>
+
+  <main id="inputScreen">
+    <div class="container">
+      <h2 class="section-title">문제 입력</h2>
+      <p class="description">문제 한 개를 사진 또는 텍스트로 입력해주세요.</p>
+      <div class="card">
+        <div class="mode-row">
+          <button id="photoMode" class="mode active" type="button">사진 첨부</button>
+          <button id="textMode" class="mode" type="button">텍스트 입력</button>
+        </div>
+
+        <div id="photoArea">
+          <div id="uploadBox" class="upload-box">
+            <strong>이미지를 첨부해주세요.</strong>
+            <div style="color:#777;font-size:14px;line-height:1.6;">JPG / JPEG / PNG<br>문제 1개만 첨부할 수 있습니다.</div>
+            <label class="outline" for="imageInput" style="display:flex;align-items:center;">파일 선택</label>
+            <input id="imageInput" class="file-input" type="file" accept="image/jpeg,image/png" />
+          </div>
+          <div id="imagePreviewWrap" class="preview-wrap hidden">
+            <div class="image-preview"><img id="imagePreview" alt="첨부 이미지 미리보기" /></div>
+            <div class="preview-actions"><button id="deleteImage" class="secondary" type="button">이미지 삭제</button></div>
+          </div>
+        </div>
+
+        <div id="textArea" class="hidden">
+          <textarea id="problemText" class="text-input" placeholder="영어 문제 전체를 입력하거나 붙여넣어 주세요."></textarea>
+        </div>
+      </div>
+      <div class="center-action"><button id="createButton" class="primary" type="button" disabled>해설지 제작하기</button></div>
+    </div>
+  </main>
+
+  <main id="generationScreen" class="hidden">
+    <div class="container">
+      <div class="progress-wrap">
+        <h2>해설지를 제작하고 있습니다.</h2>
+        <div class="track"><div id="generationBar" class="bar"></div></div>
+        <div id="generationPercent" class="percent">0%</div>
+        <p id="generationStatus" class="status">문제를 확인하고 있습니다.</p>
+        <div id="problemSummary" class="summary-box"></div>
+      </div>
+    </div>
+  </main>
+
+  <main id="resultScreen" class="hidden">
+    <div class="container">
+      <p id="resultMessage" class="result-message">해설지 제작이 완료되었습니다.</p>
+      <div class="result-layout">
+        <div class="pdf-shell">
+          <div id="pdfThumb" class="pdf-thumb hidden"><iframe id="pdfViewer" title="PDF 미리보기"></iframe></div>
+          <div id="pdfPlaceholder" class="pdf-placeholder">완성된 PDF의 첫 페이지가 이곳에 작게 표시됩니다.</div>
+        </div>
+        <aside class="side">
+          <div class="card">
+            <p class="side-title">결과물</p>
+            <p id="resultStatus" class="side-status">PDF 생성 완료</p>
+            <div class="side-buttons">
+              <button id="downloadButton" class="primary" type="button">PDF 다운로드</button>
+              <button id="newButton" class="secondary" type="button">새로운 해설 제작</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <section class="revision-section">
+        <h2>수정할 부분이 있나요?</h2>
+        <p>수정하고 싶은 부분을 입력해주세요.<br>요청한 부분만 수정되며 다른 내용은 변경되지 않습니다.</p>
+        <textarea id="revisionInput" class="revision-input" placeholder="예) 3번 문장의 자연스러운 해석만 더 매끄럽게 수정해줘."></textarea>
+        <div class="revision-action"><button id="revisionButton" class="primary" type="button" disabled>해당 부분만 수정하기</button></div>
+      </section>
+    </div>
+  </main>
+
+  <main id="revisionScreen" class="hidden">
+    <div class="container">
+      <div class="progress-wrap">
+        <h2>요청하신 부분을 수정하고 있습니다.</h2>
+        <div class="track"><div id="revisionBar" class="bar"></div></div>
+        <div id="revisionPercent" class="percent">0%</div>
+        <p id="revisionStatus" class="status">수정할 영역을 확인하고 있습니다.</p>
+        <div id="revisionSummary" class="summary-box"></div>
+        <p class="notice">지정한 부분 이외의 내용은 변경하지 않습니다.</p>
+      </div>
+    </div>
+  </main>
+
+<script>
+  const screens = {
+    input: document.getElementById('inputScreen'),
+    generation: document.getElementById('generationScreen'),
+    result: document.getElementById('resultScreen'),
+    revision: document.getElementById('revisionScreen')
+  };
+  const $ = id => document.getElementById(id);
+
+  let inputMode = 'photo';
+  let selectedImage = null;
+  let currentPdfBlob = null;
+  let currentPdfUrl = null;
+  let currentDocumentId = null;
+  let currentFileName = '영어지문_해설.pdf';
+
+  function showScreen(name) {
+    Object.values(screens).forEach(s => s.classList.add('hidden'));
+    screens[name].classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function setMode(mode) {
+    inputMode = mode;
+    $('photoMode').classList.toggle('active', mode === 'photo');
+    $('textMode').classList.toggle('active', mode === 'text');
+    $('photoArea').classList.toggle('hidden', mode !== 'photo');
+    $('textArea').classList.toggle('hidden', mode !== 'text');
+    updateCreateButton();
+  }
+
+  $('photoMode').onclick = () => setMode('photo');
+  $('textMode').onclick = () => setMode('text');
+
+  function setImage(file) {
+    if (!['image/jpeg','image/png'].includes(file.type)) {
+      alert('JPG, JPEG 또는 PNG 파일만 첨부할 수 있습니다.');
+      return;
+    }
+    selectedImage = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+      $('imagePreview').src = e.target.result;
+      $('uploadBox').classList.add('hidden');
+      $('imagePreviewWrap').classList.remove('hidden');
+      updateCreateButton();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  $('imageInput').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (file) setImage(file);
+  });
+
+  $('deleteImage').onclick = () => {
+    selectedImage = null;
+    $('imageInput').value = '';
+    $('imagePreview').src = '';
+    $('imagePreviewWrap').classList.add('hidden');
+    $('uploadBox').classList.remove('hidden');
+    updateCreateButton();
+  };
+
+  ['dragenter','dragover'].forEach(name => $('uploadBox').addEventListener(name, e => {
+    e.preventDefault();
+    $('uploadBox').classList.add('dragover');
+  }));
+  ['dragleave','drop'].forEach(name => $('uploadBox').addEventListener(name, e => {
+    e.preventDefault();
+    $('uploadBox').classList.remove('dragover');
+  }));
+  $('uploadBox').addEventListener('drop', e => {
+    const files = e.dataTransfer.files;
+    if (!files?.length) return;
+    if (files.length > 1) return alert('문제는 한 번에 하나만 첨부할 수 있습니다.');
+    setImage(files[0]);
+  });
+
+  $('problemText').addEventListener('input', updateCreateButton);
+  function updateCreateButton() {
+    $('createButton').disabled = inputMode === 'photo' ? !selectedImage : !$('problemText').value.trim();
+  }
+
+  function renderProblemSummary() {
+    const box = $('problemSummary');
+    box.innerHTML = '';
+    if (inputMode === 'photo') {
+      const img = document.createElement('img');
+      img.src = $('imagePreview').src;
+      img.alt = '입력 문제 이미지';
+      box.appendChild(img);
+    } else {
+      const t = $('problemText').value.trim();
+      box.textContent = t.length > 450 ? t.slice(0,450) + '...' : t;
+    }
+  }
+
+  function startEstimatedProgress(kind) {
+    const bar = $(kind === 'generation' ? 'generationBar' : 'revisionBar');
+    const percent = $(kind === 'generation' ? 'generationPercent' : 'revisionPercent');
+    const status = $(kind === 'generation' ? 'generationStatus' : 'revisionStatus');
+    const stages = kind === 'generation'
+      ? [[20,'문제를 확인하고 있습니다.'],[45,'문제와 지문을 분석하고 있습니다.'],[75,'해설을 작성하고 있습니다.'],[90,'제작 형식을 적용하고 있습니다.'],[100,'PDF를 생성하고 있습니다.']]
+      : [[25,'수정할 영역을 확인하고 있습니다.'],[65,'요청한 부분만 수정하고 있습니다.'],[90,'다른 부분이 변경되지 않았는지 확인하고 있습니다.'],[100,'수정된 PDF를 생성하고 있습니다.']];
+    let p = 0;
+    bar.style.width = '0%';
+    percent.textContent = '0%';
+    const timer = setInterval(() => {
+      if (p < 92) p = Math.min(92, p + Math.floor(Math.random()*4)+1);
+      bar.style.width = p + '%';
+      percent.textContent = p + '%';
+      status.textContent = (stages.find(s => p <= s[0]) || stages.at(-1))[1];
+    }, 260);
+    return {
+      finish() {
+        clearInterval(timer);
+        bar.style.width = '100%';
+        percent.textContent = '100%';
+        status.textContent = stages.at(-1)[1];
+      },
+      stop() { clearInterval(timer); }
+    };
+  }
+
+  async function readError(response, fallback='다시 시도해주세요.') {
+    try {
+      const data = await response.json();
+      return data.message || fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  function setPdfResult(blob, response) {
+    if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
+    currentPdfBlob = blob;
+    currentPdfUrl = URL.createObjectURL(blob);
+    currentDocumentId = response.headers.get('X-Document-Id') || currentDocumentId;
+    const topicHeader = response.headers.get('X-Document-Topic');
+    const topic = topicHeader ? decodeURIComponent(topicHeader) : '영어지문';
+    currentFileName = `${topic}_해설.pdf`;
+    $('pdfViewer').src = currentPdfUrl + '#page=1&toolbar=0&navpanes=0&scrollbar=0';
+    $('pdfThumb').classList.remove('hidden');
+    $('pdfPlaceholder').classList.add('hidden');
+  }
+
+  $('createButton').onclick = async () => {
+    renderProblemSummary();
+    showScreen('generation');
+    const progress = startEstimatedProgress('generation');
+
+    try {
+      const form = new FormData();
+      form.append('inputMode', inputMode);
+      if (inputMode === 'photo') form.append('problemImage', selectedImage);
+      else form.append('problemText', $('problemText').value.trim());
+
+      const response = await fetch('/api/generate-explanation', { method:'POST', body:form });
+      if (!response.ok) throw new Error(await readError(response));
+      const blob = await response.blob();
+      setPdfResult(blob, response);
+      progress.finish();
+      $('resultMessage').textContent = '해설지 제작이 완료되었습니다.';
+      $('resultStatus').textContent = 'PDF 생성 완료';
+      setTimeout(() => showScreen('result'), 250);
+    } catch (error) {
+      progress.stop();
+      alert(error.message || '다시 시도해주세요.');
+      showScreen('input');
+    }
+  };
+
+  $('downloadButton').onclick = () => {
+    if (!currentPdfUrl) return alert('다시 시도해주세요.');
+    const a = document.createElement('a');
+    a.href = currentPdfUrl;
+    a.download = currentFileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
+  $('revisionInput').addEventListener('input', () => {
+    $('revisionButton').disabled = !$('revisionInput').value.trim();
+  });
+
+  $('revisionButton').onclick = async () => {
+    const request = $('revisionInput').value.trim();
+    if (!request || !currentDocumentId) return;
+    $('revisionSummary').textContent = request;
+    showScreen('revision');
+    const progress = startEstimatedProgress('revision');
+
+    try {
+      const response = await fetch('/api/revise-explanation', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body:JSON.stringify({ documentId:currentDocumentId, revisionRequest:request })
+      });
+      if (!response.ok) throw new Error(await readError(response));
+      const blob = await response.blob();
+      setPdfResult(blob, response);
+      progress.finish();
+      $('resultMessage').textContent = '요청하신 수정이 반영되었습니다.';
+      $('resultStatus').textContent = '수정 완료';
+      $('revisionInput').value = '';
+      $('revisionButton').disabled = true;
+      setTimeout(() => showScreen('result'), 250);
+    } catch (error) {
+      progress.stop();
+      alert(error.message || '다시 시도해주세요.');
+      showScreen('result');
+    }
+  };
+
+  $('newButton').onclick = () => {
+    if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
+    selectedImage = null;
+    currentPdfBlob = null;
+    currentPdfUrl = null;
+    currentDocumentId = null;
+    currentFileName = '영어지문_해설.pdf';
+    $('imageInput').value = '';
+    $('imagePreview').src = '';
+    $('problemText').value = '';
+    $('revisionInput').value = '';
+    $('imagePreviewWrap').classList.add('hidden');
+    $('uploadBox').classList.remove('hidden');
+    $('pdfThumb').classList.add('hidden');
+    $('pdfPlaceholder').classList.remove('hidden');
+    $('createButton').disabled = true;
+    $('revisionButton').disabled = true;
+    setMode('photo');
+    showScreen('input');
+  };
+</script>
+</body>
+</html>
